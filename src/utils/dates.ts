@@ -43,12 +43,15 @@ export function calcNextPeriodDate(cycleEntries: { startDate: string }[]) {
   return addDays(new Date(lastEntry.startDate), Math.round(averageLength));
 }
 
-export function calcPregnancyWeek(profile: {
-  method: "lmp" | "dueDate";
-  lmpDate?: string;
-  dueDate?: string;
-}) {
-  const today = new Date();
+export function calcPregnancyWeek(
+  profile: {
+    method: "lmp" | "dueDate";
+    lmpDate?: string;
+    dueDate?: string;
+  },
+  referenceDate: Date = new Date()
+) {
+  const today = referenceDate;
   let lmpDate: Date | null = null;
   let dueDate: Date | null = null;
 

@@ -41,6 +41,10 @@ export function CycleTrackingScreen() {
   const [periodStart, setPeriodStart] = useState("");
   const [periodEnd, setPeriodEnd] = useState("");
 
+  const todayIso = useMemo(() => toISODate(new Date()), []);
+  const [selectedDateIso, setSelectedDateIso] = useState(todayIso);
+  const [currentMonthDate, setCurrentMonthDate] = useState(() => new Date());
+
   const [showSymptomsForm, setShowSymptomsForm] = useState(false);
   const [symptomMood, setSymptomMood] = useState("");
   const [symptomPain, setSymptomPain] = useState("");
@@ -52,8 +56,6 @@ export function CycleTrackingScreen() {
     "lmp"
   );
   const [pregnancyDate, setPregnancyDate] = useState("");
-
-  const todayIso = useMemo(() => toISODate(new Date()), []);
 
   const latestCycle = useMemo(() => {
     if (!cycleEntries.length) {
@@ -86,18 +88,88 @@ export function CycleTrackingScreen() {
     return calcPregnancyWeek(pregnancy);
   }, [pregnancy]);
 
+  const selectedPregnancySummary = useMemo(() => {
+    if (!pregnancy) {
+      return null;
+    }
+    return calcPregnancyWeek(pregnancy, new Date(selectedDateIso));
+  }, [pregnancy, selectedDateIso]);
+
+  const predictedNextPeriodIso = useMemo(
+    () => toISODate(predictedNextPeriod),
+    [predictedNextPeriod]
+  );
+
+  const periodDates = useMemo(() => {
+    const dates = new Set<string>();
+    cycleEntries.forEach((entry) => {
+      const start = new Date(entry.startDate);
+      const end = entry.endDate ? new Date(entry.endDate) : start;
+      if (end.getTime() < start.getTime()) {
+        dates.add(toISODate(start));
+        return;
+      }
+      let cursor = new Date(start);
+      while (cursor.getTime() <= end.getTime()) {
+        dates.add(toISODate(cursor));
+        cursor = addDays(cursor, 1);
+      }
+    });
+    return dates;
+  }, [cycleEntries]);
+
+  const currentMonthStart = useMemo(
+    () => new Date(currentMonthDate.getFullYear(), currentMonthDate.getMonth(), 1),
+    [currentMonthDate]
+  );
+
+  const calendarWeeks = useMemo(() => {
+    const weeks: Array<
+      Array<{ date: Date; iso: string; inMonth: boolean } | null>
+    > = [];
+    const year = currentMonthStart.getFullYear();
+    const month = currentMonthStart.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const leadingBlanks = currentMonthStart.getDay();
+    let currentWeek: Array<
+      { date: Date; iso: string; inMonth: boolean } | null
+    > = [];
+
+    for (let index = 0; index < leadingBlanks; index += 1) {
+      currentWeek.push(null);
+    }
+
+    for (let day = 1; day <= daysInMonth; day += 1) {
+      const date = new Date(year, month, day);
+      currentWeek.push({ date, iso: toISODate(date), inMonth: true });
+      if (currentWeek.length === 7) {
+        weeks.push(currentWeek);
+        currentWeek = [];
+      }
+    }
+
+    if (currentWeek.length) {
+      while (currentWeek.length < 7) {
+        currentWeek.push(null);
+      }
+      weeks.push(currentWeek);
+    }
+
+    return weeks;
+  }, [currentMonthStart]);
+
   useEffect(() => {
     if (!showSymptomsForm) {
       return;
     }
-    const existing = symptomsByDate[todayIso];
+    const existing = symptomsByDate[selectedDateIso];
     setSymptomMood(existing?.mood ?? "");
     setSymptomPain(
       existing?.painLevel !== undefined ? existing.painLevel.toString() : ""
     );
     setSymptomFlow(existing?.flow ?? "");
     setSymptomNotes(existing?.notes ?? "");
-  }, [showSymptomsForm, symptomsByDate, todayIso]);
+  }, [selectedDateIso, showSymptomsForm, symptomsByDate]);
 
   useEffect(() => {
     if (!showPregnancyForm) {
@@ -128,7 +200,7 @@ export function CycleTrackingScreen() {
 
   const handleSaveSymptoms = () => {
     const painValue = symptomPain.trim() === "" ? undefined : Number(symptomPain);
-    updateSymptom(todayIso, {
+    updateSymptom(selectedDateIso, {
       mood: symptomMood.trim() || undefined,
       painLevel: Number.isNaN(painValue) ? undefined : painValue,
       flow: symptomFlow || undefined,
@@ -147,6 +219,18 @@ export function CycleTrackingScreen() {
         : { method: "dueDate", dueDate: pregnancyDate.trim() };
     setPregnancyProfile(nextProfile);
     setShowPregnancyForm(false);
+  };
+
+  const handleSelectDay = (iso: string) => {
+    setSelectedDateIso(iso);
+  };
+
+  const handleChangeMonth = (direction: "prev" | "next") => {
+    const year = currentMonthStart.getFullYear();
+    const month = currentMonthStart.getMonth();
+    setCurrentMonthDate(
+      new Date(year, direction === "prev" ? month - 1 : month + 1, 1)
+    );
   };
 
   const renderModeSwitch = () => (
@@ -175,7 +259,8 @@ export function CycleTrackingScreen() {
 
   const renderSymptomForm = () => (
     <View>
-      <Text style={styles.cardTitle}>Log symptoms for today</Text>
+      <Text style={styles.cardTitle}>Log symptoms</Text>
+      <Text style={styles.cardCaption}>For {selectedDateIso}</Text>
       <TextField
         label="Mood"
         placeholder="e.g. calm"
@@ -225,6 +310,112 @@ export function CycleTrackingScreen() {
     </View>
   );
 
+  const renderSelectedDayDetails = () => {
+    const symptoms = symptomsByDate[selectedDateIso];
+
+    return (
+      <View style={styles.selectedDayPanel}>
+        <View style={styles.selectedDayHeader}>
+          <Text style={styles.cardTitle}>Selected day</Text>
+          <Text style={styles.selectedDayDate}>{selectedDateIso}</Text>
+        </View>
+        {mode === "pregnancy" && pregnancy && selectedPregnancySummary ? (
+          <Text style={styles.cardText}>
+            Week {selectedPregnancySummary.weeks} +{" "}
+            {selectedPregnancySummary.days}
+          </Text>
+        ) : null}
+        {symptoms ? (
+          <View>
+            {symptoms.mood ? (
+              <Text style={styles.cardText}>Mood: {symptoms.mood}</Text>
+            ) : null}
+            {symptoms.painLevel !== undefined ? (
+              <Text style={styles.cardText}>
+                Pain level: {symptoms.painLevel}
+              </Text>
+            ) : null}
+            {symptoms.flow ? (
+              <Text style={styles.cardText}>Flow: {symptoms.flow}</Text>
+            ) : null}
+            {symptoms.notes ? (
+              <Text style={styles.cardText}>Notes: {symptoms.notes}</Text>
+            ) : null}
+          </View>
+        ) : (
+          <Text style={styles.cardCaption}>No symptoms logged.</Text>
+        )}
+        <PrimaryButton
+          label={symptoms ? "Edit symptoms" : "Log symptoms"}
+          onPress={() => setShowSymptomsForm(true)}
+        />
+      </View>
+    );
+  };
+
+  const renderCalendarSection = () => (
+    <View style={styles.card}>
+      <View style={styles.calendarHeader}>
+        <Pressable
+          style={styles.calendarNavButton}
+          onPress={() => handleChangeMonth("prev")}
+        >
+          <Text style={styles.calendarNavText}>{"‹"}</Text>
+        </Pressable>
+        <Text style={styles.calendarTitle}>
+          {currentMonthStart.toLocaleString("en-US", {
+            month: "long",
+            year: "numeric",
+          })}
+        </Text>
+        <Pressable
+          style={styles.calendarNavButton}
+          onPress={() => handleChangeMonth("next")}
+        >
+          <Text style={styles.calendarNavText}>{"›"}</Text>
+        </Pressable>
+      </View>
+      <View style={styles.calendarGrid}>
+        {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((label) => (
+          <Text key={label} style={styles.calendarDayLabel}>
+            {label}
+          </Text>
+        ))}
+        {calendarWeeks.flat().map((day, index) => {
+          if (!day) {
+            return <View key={`blank-${index}`} style={styles.calendarCell} />;
+          }
+          const isSelected = day.iso === selectedDateIso;
+          const isPeriod = periodDates.has(day.iso);
+          const isPredicted = day.iso === predictedNextPeriodIso;
+
+          return (
+            <Pressable
+              key={day.iso}
+              onPress={() => handleSelectDay(day.iso)}
+              style={[
+                styles.calendarCell,
+                isSelected && styles.calendarCellSelected,
+                isPeriod && styles.calendarCellPeriod,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.calendarCellText,
+                  isSelected && styles.calendarCellTextSelected,
+                ]}
+              >
+                {day.date.getDate()}
+              </Text>
+              {isPredicted ? <View style={styles.predictedDot} /> : null}
+            </Pressable>
+          );
+        })}
+      </View>
+      {showSymptomsForm ? renderSymptomForm() : renderSelectedDayDetails()}
+    </View>
+  );
+
   const renderCycleMode = () => (
     <View>
       <View style={styles.card}>
@@ -271,14 +462,10 @@ export function CycleTrackingScreen() {
       </View>
 
       <View style={styles.card}>
-        {showSymptomsForm ? (
-          renderSymptomForm()
-        ) : (
-          <PrimaryButton
-            label="Log symptoms today"
-            onPress={() => setShowSymptomsForm(true)}
-          />
-        )}
+        <Text style={styles.cardTitle}>Symptoms</Text>
+        <Text style={styles.cardCaption}>
+          Use the calendar above to log or review symptoms for a day.
+        </Text>
       </View>
     </View>
   );
@@ -351,14 +538,10 @@ export function CycleTrackingScreen() {
       )}
 
       <View style={styles.card}>
-        {showSymptomsForm ? (
-          renderSymptomForm()
-        ) : (
-          <PrimaryButton
-            label="Log symptoms today"
-            onPress={() => setShowSymptomsForm(true)}
-          />
-        )}
+        <Text style={styles.cardTitle}>Symptoms</Text>
+        <Text style={styles.cardCaption}>
+          Use the calendar above to log or review symptoms for a day.
+        </Text>
       </View>
     </View>
   );
@@ -367,6 +550,7 @@ export function CycleTrackingScreen() {
     <ScreenLayout title="Cycle Tracking">
       <ScrollView showsVerticalScrollIndicator={false}>
         {renderModeSwitch()}
+        {renderCalendarSection()}
         {mode === "cycle" ? renderCycleMode() : renderPregnancyMode()}
         <Text style={styles.disclaimer}>
           For tracking purposes only. Not medical advice.
@@ -421,6 +605,86 @@ const styles = StyleSheet.create({
   cardCaption: {
     fontSize: 12,
     color: "#8B8F99",
+  },
+  selectedDayPanel: {
+    marginTop: 16,
+  },
+  selectedDayHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  selectedDayDate: {
+    fontSize: 12,
+    color: "#7A7D87",
+    fontWeight: "600",
+  },
+  calendarHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
+  calendarTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#111111",
+  },
+  calendarNavButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#E2E3E8",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  calendarNavText: {
+    fontSize: 18,
+    color: "#4A4D57",
+    fontWeight: "600",
+  },
+  calendarGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+  },
+  calendarDayLabel: {
+    width: "14.2857%",
+    textAlign: "center",
+    fontSize: 11,
+    color: "#8B8F99",
+    marginBottom: 6,
+  },
+  calendarCell: {
+    width: "14.2857%",
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 12,
+    marginBottom: 6,
+  },
+  calendarCellSelected: {
+    backgroundColor: "#FDE7EC",
+  },
+  calendarCellPeriod: {
+    borderWidth: 1,
+    borderColor: "#F05A78",
+  },
+  calendarCellText: {
+    fontSize: 13,
+    color: "#333333",
+    fontWeight: "600",
+  },
+  calendarCellTextSelected: {
+    color: "#F05A78",
+  },
+  predictedDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "#F05A78",
+    marginTop: 2,
   },
   inlineField: {
     marginBottom: 16,
