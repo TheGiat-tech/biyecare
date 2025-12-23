@@ -34,11 +34,27 @@ export interface PurchaseDetails {
   purchasedAt: string;
 }
 
+export type TrackingMode = "cycle" | "pregnancy";
+
 export interface CycleEntry {
   id: string;
   startDate: string;
   endDate?: string;
   notes?: string;
+}
+
+export interface SymptomEntry {
+  date: string;
+  mood?: string;
+  painLevel?: number;
+  flow?: "light" | "medium" | "heavy";
+  notes?: string;
+}
+
+export interface PregnancyProfile {
+  method: "lmp" | "dueDate";
+  lmpDate?: string;
+  dueDate?: string;
 }
 
 export type Pack = {
