@@ -20,6 +20,7 @@ import { ScanQrScreen } from "../screens/Scan/ScanQrScreen";
 import { RedeemSuccessScreen } from "../screens/Scan/RedeemSuccessScreen";
 import { PersonalDetailsScreen } from "../screens/Profile/PersonalDetailsScreen";
 import { CycleTrackingScreen } from "../screens/Cycle/CycleTrackingScreen";
+import { WeekDetailsScreen } from "../screens/Pregnancy/WeekDetailsScreen";
 import { PacksListScreen } from "../screens/Packs/PacksListScreen";
 import { CheckoutScreen } from "../screens/Packs/CheckoutScreen";
 import { OrderQrScreen } from "../screens/Packs/OrderQrScreen";
@@ -43,6 +44,7 @@ export type RootStackParamList = {
   RedeemSuccess: { orderId?: string };
   PersonalDetails: undefined;
   CycleTracking: undefined;
+  WeekDetails: { week: number };
   MachineDetails: { machine: Machine };
   Navigation: { machine: Machine };
   Untitled: undefined;
@@ -93,6 +95,7 @@ export function AppNavigator() {
       <Stack.Screen name="RedeemSuccess" component={RedeemSuccessScreen} />
       <Stack.Screen name="PersonalDetails" component={PersonalDetailsScreen} />
       <Stack.Screen name="CycleTracking" component={CycleTrackingScreen} />
+      <Stack.Screen name="WeekDetails" component={WeekDetailsScreen} />
       <Stack.Screen name="MachineDetails" component={MachineDetailsScreen} />
       <Stack.Screen name="Navigation" component={NavigationScreen} />
       <Stack.Screen name="Untitled" component={UntitledScreen} />
