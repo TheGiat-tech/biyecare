@@ -5,6 +5,7 @@ import { ScreenLayout } from "../../components/ScreenLayout";
 import { SectionCard } from "../../components/SectionCard";
 
 export function MapScreen() {
+  // TODO: Replace placeholder map area with map provider integration from spec.
   return (
     <ScreenLayout title="Nearby Machines">
       <View style={styles.mapArea}>

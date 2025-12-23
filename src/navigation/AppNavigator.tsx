@@ -14,6 +14,10 @@ import { PurchaseCompletedSuccessScreen } from "../screens/Purchase/PurchaseComp
 import { MachineLayoutMapScreen } from "../screens/MapMachines/MachineLayoutMapScreen";
 import { NavigationScreen } from "../screens/Navigation/NavigationScreen";
 import { UntitledScreen } from "../screens/Misc/UntitledScreen";
+import { MapScreen } from "../screens/MapMachines/MapScreen";
+import { ScanQrScreen } from "../screens/Scan/ScanQrScreen";
+import { PersonalDetailsScreen } from "../screens/Profile/PersonalDetailsScreen";
+import { CycleTrackingScreen } from "../screens/Cycle/CycleTrackingScreen";
 import { MainTabs } from "./MainTabs";
 
 type RootStackParamList = {
@@ -28,6 +32,10 @@ type RootStackParamList = {
   PurchaseCompleted: undefined;
   PurchaseCompletedAlt: undefined;
   PurchaseCompletedSuccess: undefined;
+  Map: undefined;
+  ScanQr: undefined;
+  PersonalDetails: undefined;
+  CycleTracking: undefined;
   MachineLayoutMap: undefined;
   Navigation: undefined;
   Untitled: undefined;
@@ -50,6 +58,10 @@ export function AppNavigator() {
       <Stack.Screen name="PurchaseCompleted" component={PurchaseCompletedScreen} />
       <Stack.Screen name="PurchaseCompletedAlt" component={PurchaseCompletedAltScreen} />
       <Stack.Screen name="PurchaseCompletedSuccess" component={PurchaseCompletedSuccessScreen} />
+      <Stack.Screen name="Map" component={MapScreen} />
+      <Stack.Screen name="ScanQr" component={ScanQrScreen} />
+      <Stack.Screen name="PersonalDetails" component={PersonalDetailsScreen} />
+      <Stack.Screen name="CycleTracking" component={CycleTrackingScreen} />
       <Stack.Screen name="MachineLayoutMap" component={MachineLayoutMapScreen} />
       <Stack.Screen name="Navigation" component={NavigationScreen} />
       <Stack.Screen name="Untitled" component={UntitledScreen} />

@@ -4,6 +4,7 @@ import { PrimaryButton } from "../../components/PrimaryButton";
 import { ScreenLayout } from "../../components/ScreenLayout";
 
 export function NavigationScreen() {
+  // TODO: Wire up external navigation providers (e.g., Waze/Google Maps) per spec.
   return (
     <ScreenLayout title="Navigation">
       <View style={styles.mapArea}>

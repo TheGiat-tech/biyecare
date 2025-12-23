@@ -4,6 +4,7 @@ import { PrimaryButton } from "../../components/PrimaryButton";
 import { ScreenLayout } from "../../components/ScreenLayout";
 
 export function ScanQrScreen() {
+  // TODO: Integrate device camera + QR scanning when backend is available.
   return (
     <ScreenLayout title="Scan">
       <View style={styles.scanner}>
