@@ -19,6 +19,9 @@ import { MachineDetailsScreen } from "../screens/MapMachines/MachineDetailsScree
 import { ScanQrScreen } from "../screens/Scan/ScanQrScreen";
 import { PersonalDetailsScreen } from "../screens/Profile/PersonalDetailsScreen";
 import { CycleTrackingScreen } from "../screens/Cycle/CycleTrackingScreen";
+import { PacksListScreen } from "../screens/Packs/PacksListScreen";
+import { CheckoutScreen } from "../screens/Packs/CheckoutScreen";
+import { OrderQrScreen } from "../screens/Packs/OrderQrScreen";
 import { MainTabs } from "./MainTabs";
 import type { Machine } from "../data/machines";
 
@@ -42,6 +45,9 @@ export type RootStackParamList = {
   Navigation: { machine: Machine };
   Untitled: undefined;
   Main: undefined;
+  PacksList: undefined;
+  Checkout: { packId: string };
+  OrderQr: { orderId: string };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -87,6 +93,9 @@ export function AppNavigator() {
       <Stack.Screen name="MachineDetails" component={MachineDetailsScreen} />
       <Stack.Screen name="Navigation" component={NavigationScreen} />
       <Stack.Screen name="Untitled" component={UntitledScreen} />
+      <Stack.Screen name="PacksList" component={PacksListScreen} />
+      <Stack.Screen name="Checkout" component={CheckoutScreen} />
+      <Stack.Screen name="OrderQr" component={OrderQrScreen} />
       <Stack.Screen name="Main" component={MainTabs} />
     </Stack.Navigator>
   );

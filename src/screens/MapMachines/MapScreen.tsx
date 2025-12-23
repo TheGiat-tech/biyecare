@@ -4,6 +4,7 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { ScreenLayout } from "../../components/ScreenLayout";
 import { SectionCard } from "../../components/SectionCard";
+import { PrimaryButton } from "../../components/PrimaryButton";
 import { machines } from "../../data/machines";
 import type { RootStackParamList } from "../../navigation/AppNavigator";
 
@@ -54,6 +55,13 @@ export function MapScreen() {
               </Text>
             </Pressable>
           ))}
+        </View>
+        <View style={styles.packCta}>
+          <Text style={styles.packCtaText}>Need supplies? Buy a pack.</Text>
+          <PrimaryButton
+            label="Buy a pack"
+            onPress={() => navigation.navigate("PacksList")}
+          />
         </View>
       </SectionCard>
     </ScreenLayout>
@@ -139,5 +147,13 @@ const styles = StyleSheet.create({
   },
   machineStatusOffline: {
     color: "#B0B3BC",
+  },
+  packCta: {
+    marginTop: 16,
+    gap: 12,
+  },
+  packCtaText: {
+    fontSize: 12,
+    color: "#8B8F99",
   },
 });

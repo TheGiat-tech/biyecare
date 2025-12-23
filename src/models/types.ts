@@ -40,3 +40,21 @@ export interface CycleEntry {
   endDate?: string;
   notes?: string;
 }
+
+export type Pack = {
+  id: string;
+  name: string;
+  price: number;
+  description: string;
+};
+
+export type OrderStatus = "pending" | "redeemed" | "expired";
+
+export type Order = {
+  id: string;
+  packId: string;
+  createdAt: string;
+  expiresAt: string;
+  status: OrderStatus;
+  qrPayload: string;
+};
