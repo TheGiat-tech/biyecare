@@ -32,9 +32,13 @@ export function CycleTrackingScreen() {
     cycleEntries,
     symptomsByDate,
     pregnancy,
+    reminders,
     addCycleEntry,
     updateSymptom,
     setPregnancyProfile,
+    setReminderEnabled,
+    setReminderTime,
+    setPeriodDaysBefore,
   } = useHealthState();
 
   const [showPeriodForm, setShowPeriodForm] = useState(false);
@@ -56,6 +60,14 @@ export function CycleTrackingScreen() {
     "lmp"
   );
   const [pregnancyDate, setPregnancyDate] = useState("");
+  const [showHourOptions, setShowHourOptions] = useState(false);
+  const [showMinuteOptions, setShowMinuteOptions] = useState(false);
+
+  const hourOptions = useMemo(
+    () => Array.from({ length: 24 }, (_, index) => index),
+    []
+  );
+  const minuteOptions = useMemo(() => [0, 15, 30, 45], []);
 
   const latestCycle = useMemo(() => {
     if (!cycleEntries.length) {
@@ -223,6 +235,27 @@ export function CycleTrackingScreen() {
 
   const handleSelectDay = (iso: string) => {
     setSelectedDateIso(iso);
+  };
+
+  const handleToggleReminder = (
+    type: "periodPrediction" | "pregnancyWeekly"
+  ) => {
+    setReminderEnabled(type, !reminders.enabled[type]);
+  };
+
+  const handleSelectHour = (hour: number) => {
+    setReminderTime(hour, reminders.timeOfDay.minute);
+    setShowHourOptions(false);
+  };
+
+  const handleSelectMinute = (minute: number) => {
+    setReminderTime(reminders.timeOfDay.hour, minute);
+    setShowMinuteOptions(false);
+  };
+
+  const handleAdjustDaysBefore = (delta: number) => {
+    const nextValue = Math.max(0, reminders.periodDaysBefore + delta);
+    setPeriodDaysBefore(nextValue);
   };
 
   const handleChangeMonth = (direction: "prev" | "next") => {
@@ -546,12 +579,123 @@ export function CycleTrackingScreen() {
     </View>
   );
 
+  const renderReminderToggle = (label: string, enabled: boolean, onPress: () => void) => (
+    <Pressable style={styles.reminderRow} onPress={onPress}>
+      <Text style={styles.cardText}>{label}</Text>
+      <View style={[styles.toggleTrack, enabled && styles.toggleTrackActive]}>
+        <View style={[styles.toggleThumb, enabled && styles.toggleThumbActive]} />
+      </View>
+    </Pressable>
+  );
+
+  const renderRemindersSection = () => (
+    <View style={styles.card}>
+      <Text style={styles.cardTitle}>Reminders</Text>
+      {renderReminderToggle(
+        "Period reminder",
+        reminders.enabled.periodPrediction,
+        () => handleToggleReminder("periodPrediction")
+      )}
+      <View style={styles.reminderRow}>
+        <Text style={styles.cardText}>Days before</Text>
+        <View style={styles.stepper}>
+          <Pressable
+            style={styles.stepperButton}
+            onPress={() => handleAdjustDaysBefore(-1)}
+          >
+            <Text style={styles.stepperText}>-</Text>
+          </Pressable>
+          <Text style={styles.stepperValue}>{reminders.periodDaysBefore}</Text>
+          <Pressable
+            style={styles.stepperButton}
+            onPress={() => handleAdjustDaysBefore(1)}
+          >
+            <Text style={styles.stepperText}>+</Text>
+          </Pressable>
+        </View>
+      </View>
+      {renderReminderToggle(
+        "Pregnancy weekly reminder",
+        reminders.enabled.pregnancyWeekly,
+        () => handleToggleReminder("pregnancyWeekly")
+      )}
+      <View style={styles.reminderRow}>
+        <Text style={styles.cardText}>Time of day</Text>
+        <View style={styles.timePickerRow}>
+          <View style={styles.dropdown}>
+            <Pressable
+              style={styles.dropdownToggle}
+              onPress={() => {
+                setShowHourOptions((prev) => !prev);
+                setShowMinuteOptions(false);
+              }}
+            >
+              <Text style={styles.dropdownText}>
+                {reminders.timeOfDay.hour.toString().padStart(2, "0")}
+              </Text>
+            </Pressable>
+            {showHourOptions ? (
+              <View style={styles.dropdownList}>
+                <ScrollView style={styles.dropdownScroll}>
+                  {hourOptions.map((hour) => (
+                    <Pressable
+                      key={hour}
+                      style={styles.dropdownOption}
+                      onPress={() => handleSelectHour(hour)}
+                    >
+                      <Text style={styles.dropdownOptionText}>
+                        {hour.toString().padStart(2, "0")}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </ScrollView>
+              </View>
+            ) : null}
+          </View>
+          <Text style={styles.timeSeparator}>:</Text>
+          <View style={styles.dropdown}>
+            <Pressable
+              style={styles.dropdownToggle}
+              onPress={() => {
+                setShowMinuteOptions((prev) => !prev);
+                setShowHourOptions(false);
+              }}
+            >
+              <Text style={styles.dropdownText}>
+                {reminders.timeOfDay.minute.toString().padStart(2, "0")}
+              </Text>
+            </Pressable>
+            {showMinuteOptions ? (
+              <View style={styles.dropdownList}>
+                {minuteOptions.map((minute) => (
+                  <Pressable
+                    key={minute}
+                    style={styles.dropdownOption}
+                    onPress={() => handleSelectMinute(minute)}
+                  >
+                    <Text style={styles.dropdownOptionText}>
+                      {minute.toString().padStart(2, "0")}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            ) : null}
+          </View>
+        </View>
+      </View>
+      <Text style={styles.reminderDisclaimer}>
+        Reminders are optional and for tracking only.
+      </Text>
+    </View>
+  );
+
   return (
     <ScreenLayout title="Cycle Tracking">
       <ScrollView showsVerticalScrollIndicator={false}>
         {renderModeSwitch()}
         {renderCalendarSection()}
         {mode === "cycle" ? renderCycleMode() : renderPregnancyMode()}
+        {renderRemindersSection()}
         <Text style={styles.disclaimer}>
           For tracking purposes only. Not medical advice.
         </Text>
@@ -758,5 +902,114 @@ const styles = StyleSheet.create({
     color: "#8B8F99",
     marginTop: 8,
     marginBottom: 24,
+  },
+  reminderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
+  toggleTrack: {
+    width: 44,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: "#E2E3E8",
+    padding: 2,
+    justifyContent: "center",
+  },
+  toggleTrackActive: {
+    backgroundColor: "#F05A78",
+  },
+  toggleThumb: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: "#FFFFFF",
+    alignSelf: "flex-start",
+  },
+  toggleThumbActive: {
+    alignSelf: "flex-end",
+  },
+  stepper: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  stepperButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#E2E3E8",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  stepperText: {
+    fontSize: 16,
+    color: "#4A4D57",
+    fontWeight: "600",
+  },
+  stepperValue: {
+    minWidth: 24,
+    textAlign: "center",
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#111111",
+    marginHorizontal: 10,
+  },
+  timePickerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  timeSeparator: {
+    marginHorizontal: 6,
+    fontSize: 16,
+    color: "#4A4D57",
+    fontWeight: "600",
+  },
+  dropdown: {
+    position: "relative",
+  },
+  dropdownToggle: {
+    borderWidth: 1,
+    borderColor: "#E2E3E8",
+    borderRadius: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    minWidth: 64,
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+  },
+  dropdownText: {
+    fontSize: 13,
+    color: "#4A4D57",
+    fontWeight: "600",
+  },
+  dropdownList: {
+    position: "absolute",
+    top: 44,
+    left: 0,
+    right: 0,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#E2E3E8",
+    borderRadius: 12,
+    zIndex: 10,
+    maxHeight: 180,
+  },
+  dropdownScroll: {
+    maxHeight: 180,
+  },
+  dropdownOption: {
+    paddingVertical: 8,
+    alignItems: "center",
+  },
+  dropdownOptionText: {
+    fontSize: 13,
+    color: "#4A4D57",
+    fontWeight: "600",
+  },
+  reminderDisclaimer: {
+    fontSize: 11,
+    color: "#8B8F99",
   },
 });

@@ -36,6 +36,14 @@ export interface PurchaseDetails {
 
 export type TrackingMode = "cycle" | "pregnancy";
 
+export type ReminderType = "periodPrediction" | "pregnancyWeekly";
+
+export interface ReminderSettings {
+  enabled: Record<ReminderType, boolean>;
+  timeOfDay: { hour: number; minute: number };
+  periodDaysBefore: number;
+}
+
 export interface CycleEntry {
   id: string;
   startDate: string;
