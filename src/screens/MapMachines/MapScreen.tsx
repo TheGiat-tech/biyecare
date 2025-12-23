@@ -1,25 +1,60 @@
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
-import { PrimaryButton } from "../../components/PrimaryButton";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { ScreenLayout } from "../../components/ScreenLayout";
 import { SectionCard } from "../../components/SectionCard";
+import { machines } from "../../data/machines";
+import type { RootStackParamList } from "../../navigation/AppNavigator";
 
 export function MapScreen() {
-  // TODO: Replace placeholder map area with map provider integration from spec.
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
   return (
     <ScreenLayout title="Nearby Machines">
       <View style={styles.mapArea}>
-        <View style={styles.mapPin} />
-        <View style={[styles.mapPin, styles.mapPinSecondary]} />
+        <Text style={styles.mapLabel}>Map preview</Text>
+        <View style={styles.pinList}>
+          {machines.map((machine) => (
+            <View key={machine.id} style={styles.pinRow}>
+              <View
+                style={[
+                  styles.pinDot,
+                  machine.status === "offline" && styles.pinDotOffline,
+                ]}
+              />
+              <Text style={styles.pinText}>#{machine.id}</Text>
+            </View>
+          ))}
+        </View>
       </View>
       <SectionCard>
-        <Text style={styles.sheetTitle}>Machine 3344</Text>
-        <Text style={styles.sheetSubtitle}>1.2 km • Open now</Text>
-        <View style={styles.row}>
-          <Text style={styles.detailLabel}>Stock</Text>
-          <Text style={styles.detailValue}>Available</Text>
+        <Text style={styles.sheetTitle}>Select a machine</Text>
+        <Text style={styles.sheetSubtitle}>Tap a machine pin below</Text>
+        <View style={styles.machineList}>
+          {machines.map((machine) => (
+            <Pressable
+              key={machine.id}
+              onPress={() => navigation.navigate("MachineDetails", { machine })}
+              style={styles.machineRow}
+            >
+              <View style={styles.machineInfo}>
+                <Text style={styles.machineTitle}>
+                  {machine.name ? `${machine.name} • ` : ""}#{machine.id}
+                </Text>
+                <Text style={styles.machineSubtitle}>{machine.address}</Text>
+              </View>
+              <Text
+                style={[
+                  styles.machineStatus,
+                  machine.status === "offline" && styles.machineStatusOffline,
+                ]}
+              >
+                {machine.status === "offline" ? "Offline" : "Available"}
+              </Text>
+            </Pressable>
+          ))}
         </View>
-        <PrimaryButton label="Start Navigation" />
       </SectionCard>
     </ScreenLayout>
   );
@@ -33,16 +68,34 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     justifyContent: "center",
     alignItems: "center",
+    paddingHorizontal: 16,
   },
-  mapPin: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
+  mapLabel: {
+    fontSize: 12,
+    color: "#8B8F99",
+    marginBottom: 12,
+  },
+  pinList: {
+    width: "100%",
+    gap: 8,
+  },
+  pinRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  pinDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
     backgroundColor: "#F05A78",
-    marginBottom: 8,
   },
-  mapPinSecondary: {
-    backgroundColor: "#FFB6C6",
+  pinDotOffline: {
+    backgroundColor: "#B0B3BC",
+  },
+  pinText: {
+    fontSize: 12,
+    color: "#111111",
   },
   sheetTitle: {
     fontSize: 16,
@@ -55,17 +108,36 @@ const styles = StyleSheet.create({
     color: "#8B8F99",
     marginBottom: 12,
   },
-  row: {
+  machineList: {
+    gap: 12,
+  },
+  machineRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 12,
+    alignItems: "center",
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderTopColor: "#F1F2F5",
   },
-  detailLabel: {
+  machineInfo: {
+    flex: 1,
+    marginRight: 12,
+  },
+  machineTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#111111",
+  },
+  machineSubtitle: {
+    marginTop: 4,
     fontSize: 12,
     color: "#8B8F99",
   },
-  detailValue: {
+  machineStatus: {
     fontSize: 12,
-    color: "#111111",
+    color: "#1A1A1A",
+  },
+  machineStatusOffline: {
+    color: "#B0B3BC",
   },
 });
