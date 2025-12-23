@@ -51,11 +51,22 @@ export interface CycleEntry {
   notes?: string;
 }
 
+export type BleedingType = "none" | "spotting" | "light" | "period";
+
+export type DischargeType =
+  | "none"
+  | "watery"
+  | "creamy"
+  | "sticky"
+  | "eggwhite";
+
 export interface SymptomEntry {
   date: string;
   mood?: string;
   painLevel?: number;
   flow?: "light" | "medium" | "heavy";
+  bleedingType?: BleedingType;
+  dischargeType?: DischargeType;
   notes?: string;
 }
 

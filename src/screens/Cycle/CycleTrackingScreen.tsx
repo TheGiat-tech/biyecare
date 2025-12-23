@@ -13,7 +13,12 @@ import { InsightCard } from "../../components/InsightCard";
 import { PrimaryButton } from "../../components/PrimaryButton";
 import { ScreenLayout } from "../../components/ScreenLayout";
 import { TextField } from "../../components/TextField";
-import type { PregnancyProfile, TrackingMode } from "../../models/types";
+import type {
+  BleedingType,
+  DischargeType,
+  PregnancyProfile,
+  TrackingMode,
+} from "../../models/types";
 import type { RootStackParamList } from "../../navigation/AppNavigator";
 import { useHealthState } from "../../state/HealthState";
 import {
@@ -22,6 +27,8 @@ import {
   calcPregnancyWeek,
   toISODate,
 } from "../../utils/dates";
+import { getBleedingDischargeInsight } from "../../data/cycleInsights";
+import { buildCycleContext } from "../../utils/cycleContext";
 import {
   calcAverageCycleLength,
   calcAveragePeriodLength,
@@ -34,6 +41,26 @@ const FLOW_OPTIONS: Array<"light" | "medium" | "heavy"> = [
   "medium",
   "heavy",
 ];
+
+const BLEEDING_OPTIONS: Array<{ label: string; value: BleedingType }> = [
+  { label: "None", value: "none" },
+  { label: "Spotting", value: "spotting" },
+  { label: "Light", value: "light" },
+  { label: "Period", value: "period" },
+];
+
+const DISCHARGE_OPTIONS: Array<{ label: string; value: DischargeType }> = [
+  { label: "None", value: "none" },
+  { label: "Watery", value: "watery" },
+  { label: "Creamy", value: "creamy" },
+  { label: "Sticky", value: "sticky" },
+  { label: "Egg-white", value: "eggwhite" },
+];
+
+const getOptionLabel = <T extends { label: string; value: string }>(
+  options: T[],
+  value: string
+) => options.find((option) => option.value === value)?.label ?? value;
 
 export function CycleTrackingScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -93,6 +120,16 @@ export function CycleTrackingScreen() {
   const predictedNextPeriod = useMemo(
     () => calcNextPeriodDate(cycleEntries),
     [cycleEntries]
+  );
+
+  const cycleContext = useMemo(
+    () =>
+      buildCycleContext({
+        selectedDate: new Date(selectedDateIso),
+        cycleEntries,
+        predictedNextPeriod,
+      }),
+    [cycleEntries, predictedNextPeriod, selectedDateIso]
   );
 
   const fertileWindow = useMemo(() => {
@@ -380,6 +417,21 @@ export function CycleTrackingScreen() {
 
   const renderSelectedDayDetails = () => {
     const symptoms = symptomsByDate[selectedDateIso];
+    const bleedingType = symptoms?.bleedingType ?? "none";
+    const dischargeType = symptoms?.dischargeType ?? "none";
+    const bleedingLabel =
+      bleedingType !== "none"
+        ? getOptionLabel(BLEEDING_OPTIONS, bleedingType)
+        : null;
+    const dischargeLabel =
+      dischargeType !== "none"
+        ? getOptionLabel(DISCHARGE_OPTIONS, dischargeType)
+        : null;
+    const insight = getBleedingDischargeInsight({
+      bleedingType,
+      dischargeType,
+      context: cycleContext,
+    });
 
     return (
       <View style={styles.selectedDayPanel}>
@@ -406,6 +458,12 @@ export function CycleTrackingScreen() {
             {symptoms.flow ? (
               <Text style={styles.cardText}>Flow: {symptoms.flow}</Text>
             ) : null}
+            {bleedingLabel ? (
+              <Text style={styles.cardText}>Bleeding: {bleedingLabel}</Text>
+            ) : null}
+            {dischargeLabel ? (
+              <Text style={styles.cardText}>Discharge: {dischargeLabel}</Text>
+            ) : null}
             {symptoms.notes ? (
               <Text style={styles.cardText}>Notes: {symptoms.notes}</Text>
             ) : null}
@@ -413,6 +471,70 @@ export function CycleTrackingScreen() {
         ) : (
           <Text style={styles.cardCaption}>No symptoms logged.</Text>
         )}
+        <View style={styles.bleedingSection}>
+          <Text style={styles.sectionTitle}>Bleeding &amp; Discharge</Text>
+          <Text style={styles.inlineLabel}>Bleeding</Text>
+          <View style={styles.pillRow}>
+            {BLEEDING_OPTIONS.map((option) => {
+              const isActive = bleedingType === option.value;
+              return (
+                <Pressable
+                  key={option.value}
+                  style={[
+                    styles.pillChip,
+                    isActive && styles.pillChipActive,
+                  ]}
+                  onPress={() =>
+                    updateSymptom(selectedDateIso, {
+                      bleedingType: option.value,
+                    })
+                  }
+                >
+                  <Text
+                    style={[
+                      styles.pillText,
+                      isActive && styles.pillTextActive,
+                    ]}
+                  >
+                    {option.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          <Text style={styles.inlineLabel}>Discharge</Text>
+          <View style={styles.pillRow}>
+            {DISCHARGE_OPTIONS.map((option) => {
+              const isActive = dischargeType === option.value;
+              return (
+                <Pressable
+                  key={option.value}
+                  style={[
+                    styles.pillChip,
+                    isActive && styles.pillChipActive,
+                  ]}
+                  onPress={() =>
+                    updateSymptom(selectedDateIso, {
+                      dischargeType: option.value,
+                    })
+                  }
+                >
+                  <Text
+                    style={[
+                      styles.pillText,
+                      isActive && styles.pillTextActive,
+                    ]}
+                  >
+                    {option.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          {insight ? (
+            <Text style={styles.insightLine}>Insight: {insight}</Text>
+          ) : null}
+        </View>
         <PrimaryButton
           label={symptoms ? "Edit symptoms" : "Log symptoms"}
           onPress={() => setShowSymptomsForm(true)}
@@ -788,7 +910,7 @@ export function CycleTrackingScreen() {
         {renderRemindersSection()}
         {renderInsightsSection()}
         <Text style={styles.disclaimer}>
-          For tracking purposes only. Not medical advice.
+          For tracking only. Not medical advice.
         </Text>
       </ScrollView>
     </ScreenLayout>
@@ -851,6 +973,16 @@ const styles = StyleSheet.create({
   },
   selectedDayPanel: {
     marginTop: 16,
+  },
+  bleedingSection: {
+    marginTop: 16,
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#111111",
+    marginBottom: 8,
   },
   selectedDayHeader: {
     flexDirection: "row",
@@ -972,6 +1104,36 @@ const styles = StyleSheet.create({
   },
   flowChipTextActive: {
     color: "#F05A78",
+  },
+  pillRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginBottom: 12,
+  },
+  pillChip: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    marginRight: 8,
+    marginBottom: 8,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#E2E3E8",
+  },
+  pillChipActive: {
+    backgroundColor: "#FDE7EC",
+    borderColor: "#F05A78",
+  },
+  pillText: {
+    fontSize: 12,
+    color: "#7A7D87",
+    fontWeight: "600",
+  },
+  pillTextActive: {
+    color: "#F05A78",
+  },
+  insightLine: {
+    fontSize: 12,
+    color: "#8B8F99",
   },
   methodToggle: {
     marginBottom: 16,
