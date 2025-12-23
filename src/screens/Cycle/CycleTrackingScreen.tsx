@@ -7,10 +7,14 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { InsightCard } from "../../components/InsightCard";
 import { PrimaryButton } from "../../components/PrimaryButton";
 import { ScreenLayout } from "../../components/ScreenLayout";
 import { TextField } from "../../components/TextField";
 import type { PregnancyProfile, TrackingMode } from "../../models/types";
+import type { RootStackParamList } from "../../navigation/AppNavigator";
 import { useHealthState } from "../../state/HealthState";
 import {
   addDays,
@@ -18,6 +22,12 @@ import {
   calcPregnancyWeek,
   toISODate,
 } from "../../utils/dates";
+import {
+  calcAverageCycleLength,
+  calcAveragePeriodLength,
+  calcNextPeriodPrediction,
+  calcTopSymptoms,
+} from "../../utils/insights";
 
 const FLOW_OPTIONS: Array<"light" | "medium" | "heavy"> = [
   "light",
@@ -26,6 +36,7 @@ const FLOW_OPTIONS: Array<"light" | "medium" | "heavy"> = [
 ];
 
 export function CycleTrackingScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const {
     mode,
     setMode,
@@ -110,6 +121,30 @@ export function CycleTrackingScreen() {
   const predictedNextPeriodIso = useMemo(
     () => toISODate(predictedNextPeriod),
     [predictedNextPeriod]
+  );
+
+  const averageCycleLength = useMemo(
+    () => calcAverageCycleLength(cycleEntries),
+    [cycleEntries]
+  );
+
+  const averagePeriodLength = useMemo(
+    () => calcAveragePeriodLength(cycleEntries),
+    [cycleEntries]
+  );
+
+  const nextPeriodPredictionIso = useMemo(
+    () =>
+      calcNextPeriodPrediction(cycleEntries, {
+        calcNextPeriodDate,
+        toISODate,
+      }),
+    [cycleEntries]
+  );
+
+  const topSymptoms = useMemo(
+    () => calcTopSymptoms(symptomsByDate),
+    [symptomsByDate]
   );
 
   const periodDates = useMemo(() => {
@@ -689,6 +724,61 @@ export function CycleTrackingScreen() {
     </View>
   );
 
+  const renderInsightsSection = () => (
+    <View style={styles.card}>
+      <Text style={styles.cardTitle}>Insights</Text>
+      <View style={styles.insightsList}>
+        <InsightCard title="Average cycle length">
+          <Text style={styles.insightText}>
+            {averageCycleLength
+              ? `Avg cycle: ${averageCycleLength} days`
+              : "Not enough data yet"}
+          </Text>
+        </InsightCard>
+        <InsightCard title="Average period length">
+          <Text style={styles.insightText}>
+            {averagePeriodLength
+              ? `Avg period: ${averagePeriodLength} days`
+              : "Not enough data yet"}
+          </Text>
+        </InsightCard>
+        <InsightCard title="Next period">
+          <Text style={styles.insightText}>{nextPeriodPredictionIso}</Text>
+        </InsightCard>
+        <InsightCard title="Top symptoms">
+          {topSymptoms.length ? (
+            topSymptoms.map((symptom) => (
+              <Text key={symptom.label} style={styles.insightText}>
+                {symptom.label}: {symptom.count}
+              </Text>
+            ))
+          ) : (
+            <Text style={styles.cardCaption}>No symptom data yet</Text>
+          )}
+        </InsightCard>
+        {mode === "pregnancy" && pregnancySummary ? (
+          <InsightCard title="Pregnancy update">
+            <Text style={styles.insightText}>
+              You are {pregnancySummary.weeks} weeks + {pregnancySummary.days} days
+            </Text>
+            <Pressable
+              style={styles.weekDetailsButton}
+              onPress={() =>
+                navigation.navigate("WeekDetails", {
+                  week: pregnancySummary.weeks,
+                })
+              }
+            >
+              <Text style={styles.weekDetailsText}>
+                Week {pregnancySummary.weeks} details
+              </Text>
+            </Pressable>
+          </InsightCard>
+        ) : null}
+      </View>
+    </View>
+  );
+
   return (
     <ScreenLayout title="Cycle Tracking">
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -696,6 +786,7 @@ export function CycleTrackingScreen() {
         {renderCalendarSection()}
         {mode === "cycle" ? renderCycleMode() : renderPregnancyMode()}
         {renderRemindersSection()}
+        {renderInsightsSection()}
         <Text style={styles.disclaimer}>
           For tracking purposes only. Not medical advice.
         </Text>
@@ -749,6 +840,14 @@ const styles = StyleSheet.create({
   cardCaption: {
     fontSize: 12,
     color: "#8B8F99",
+  },
+  insightsList: {
+    marginTop: 4,
+  },
+  insightText: {
+    fontSize: 13,
+    color: "#4A4D57",
+    marginBottom: 4,
   },
   selectedDayPanel: {
     marginTop: 16,
@@ -1011,5 +1110,19 @@ const styles = StyleSheet.create({
   reminderDisclaimer: {
     fontSize: 11,
     color: "#8B8F99",
+  },
+  weekDetailsButton: {
+    marginTop: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#E2E3E8",
+    alignSelf: "flex-start",
+  },
+  weekDetailsText: {
+    fontSize: 12,
+    color: "#4A4D57",
+    fontWeight: "600",
   },
 });
