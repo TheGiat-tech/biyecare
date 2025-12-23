@@ -24,6 +24,7 @@ import { WeekDetailsScreen } from "../screens/Pregnancy/WeekDetailsScreen";
 import { PacksListScreen } from "../screens/Packs/PacksListScreen";
 import { CheckoutScreen } from "../screens/Packs/CheckoutScreen";
 import { OrderQrScreen } from "../screens/Packs/OrderQrScreen";
+import { PrivacyDataScreen } from "../screens/Settings/PrivacyDataScreen";
 import { MainTabs } from "./MainTabs";
 import type { Machine } from "../data/machines";
 
@@ -52,6 +53,7 @@ export type RootStackParamList = {
   PacksList: undefined;
   Checkout: { packId: string };
   OrderQr: { orderId: string };
+  PrivacyData: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -102,6 +104,7 @@ export function AppNavigator() {
       <Stack.Screen name="PacksList" component={PacksListScreen} />
       <Stack.Screen name="Checkout" component={CheckoutScreen} />
       <Stack.Screen name="OrderQr" component={OrderQrScreen} />
+      <Stack.Screen name="PrivacyData" component={PrivacyDataScreen} />
       <Stack.Screen name="Main" component={MainTabs} />
     </Stack.Navigator>
   );

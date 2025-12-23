@@ -16,8 +16,16 @@ import type {
   TrackingMode,
 } from "../models/types";
 import { scheduleAllReminders } from "../services/reminders";
+import { STORAGE_KEYS } from "../constants/storageKeys";
 
-const HEALTH_KEY = "biyecare.health";
+const createDefaultReminders = (): ReminderSettings => ({
+  enabled: {
+    periodPrediction: false,
+    pregnancyWeekly: false,
+  },
+  timeOfDay: { hour: 9, minute: 0 },
+  periodDaysBefore: 2,
+});
 
 type HealthStateValue = {
   mode: TrackingMode;
@@ -32,21 +40,13 @@ type HealthStateValue = {
   setReminderEnabled: (type: ReminderType, enabled: boolean) => void;
   setReminderTime: (hour: number, minute: number) => void;
   setPeriodDaysBefore: (days: number) => void;
+  resetHealthState: () => void;
 };
 
 const HealthStateContext = createContext<HealthStateValue | undefined>(undefined);
 
 const buildCycleId = () =>
   `cycle_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
-
-const defaultReminders: ReminderSettings = {
-  enabled: {
-    periodPrediction: false,
-    pregnancyWeekly: false,
-  },
-  timeOfDay: { hour: 9, minute: 0 },
-  periodDaysBefore: 2,
-};
 
 export function HealthStateProvider({ children }: { children: React.ReactNode }) {
   const [mode, setModeState] = useState<TrackingMode>("cycle");
@@ -56,13 +56,13 @@ export function HealthStateProvider({ children }: { children: React.ReactNode })
   >({});
   const [pregnancy, setPregnancy] = useState<PregnancyProfile | null>(null);
   const [reminders, setReminders] =
-    useState<ReminderSettings>(defaultReminders);
+    useState<ReminderSettings>(createDefaultReminders());
   const [hasLoaded, setHasLoaded] = useState(false);
 
   useEffect(() => {
     const loadHealth = async () => {
       try {
-        const stored = await AsyncStorage.getItem(HEALTH_KEY);
+        const stored = await AsyncStorage.getItem(STORAGE_KEYS.HEALTH);
         if (stored) {
           const parsed = JSON.parse(stored) as {
             mode?: TrackingMode;
@@ -71,6 +71,7 @@ export function HealthStateProvider({ children }: { children: React.ReactNode })
             pregnancy?: PregnancyProfile | null;
             reminders?: ReminderSettings;
           };
+          const defaultReminders = createDefaultReminders();
           if (parsed.mode) {
             setModeState(parsed.mode);
           }
@@ -103,7 +104,7 @@ export function HealthStateProvider({ children }: { children: React.ReactNode })
         setCycleEntries([]);
         setSymptomsByDate({});
         setPregnancy(null);
-        setReminders(defaultReminders);
+        setReminders(createDefaultReminders());
       } finally {
         setHasLoaded(true);
       }
@@ -119,7 +120,7 @@ export function HealthStateProvider({ children }: { children: React.ReactNode })
     const persistHealth = async () => {
       try {
         await AsyncStorage.setItem(
-          HEALTH_KEY,
+          STORAGE_KEYS.HEALTH,
           JSON.stringify({
             mode,
             cycleEntries,
@@ -209,6 +210,14 @@ export function HealthStateProvider({ children }: { children: React.ReactNode })
     }));
   }, []);
 
+  const resetHealthState = useCallback(() => {
+    setModeState("cycle");
+    setCycleEntries([]);
+    setSymptomsByDate({});
+    setPregnancy(null);
+    setReminders(createDefaultReminders());
+  }, []);
+
   const value = useMemo(
     () => ({
       mode,
@@ -223,6 +232,7 @@ export function HealthStateProvider({ children }: { children: React.ReactNode })
       setReminderEnabled,
       setReminderTime,
       setPeriodDaysBefore,
+      resetHealthState,
     }),
     [
       addCycleEntry,
@@ -230,6 +240,7 @@ export function HealthStateProvider({ children }: { children: React.ReactNode })
       mode,
       pregnancy,
       reminders,
+      resetHealthState,
       setMode,
       setPregnancyProfile,
       setPeriodDaysBefore,

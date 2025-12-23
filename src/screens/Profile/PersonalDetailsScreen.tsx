@@ -3,8 +3,14 @@ import { StyleSheet, Text, View } from "react-native";
 import { PrimaryButton } from "../../components/PrimaryButton";
 import { ScreenLayout } from "../../components/ScreenLayout";
 import { TextField } from "../../components/TextField";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import type { RootStackParamList } from "../../navigation/AppNavigator";
 
 export function PersonalDetailsScreen() {
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
   return (
     <ScreenLayout title="Profile">
       <View style={styles.avatarRow}>
@@ -21,6 +27,11 @@ export function PersonalDetailsScreen() {
         <TextField label="Phone" placeholder="+1 555 000 000" />
         <TextField label="Email" placeholder="jane@email.com" />
         <PrimaryButton label="Save" />
+        <PrimaryButton
+          label="Privacy & Data"
+          variant="ghost"
+          onPress={() => navigation.navigate("PrivacyData")}
+        />
       </View>
     </ScreenLayout>
   );
@@ -58,5 +69,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     borderRadius: 22,
     padding: 20,
+    gap: 12,
   },
 });
