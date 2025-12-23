@@ -12,16 +12,17 @@ import { PurchaseDetailsAltTwoScreen } from "../screens/Purchase/PurchaseDetails
 import { PurchaseCompletedScreen } from "../screens/Purchase/PurchaseCompletedScreen";
 import { PurchaseCompletedAltScreen } from "../screens/Purchase/PurchaseCompletedAltScreen";
 import { PurchaseCompletedSuccessScreen } from "../screens/Purchase/PurchaseCompletedSuccessScreen";
-import { MachineLayoutMapScreen } from "../screens/MapMachines/MachineLayoutMapScreen";
 import { NavigationScreen } from "../screens/Navigation/NavigationScreen";
 import { UntitledScreen } from "../screens/Misc/UntitledScreen";
 import { MapScreen } from "../screens/MapMachines/MapScreen";
+import { MachineDetailsScreen } from "../screens/MapMachines/MachineDetailsScreen";
 import { ScanQrScreen } from "../screens/Scan/ScanQrScreen";
 import { PersonalDetailsScreen } from "../screens/Profile/PersonalDetailsScreen";
 import { CycleTrackingScreen } from "../screens/Cycle/CycleTrackingScreen";
 import { MainTabs } from "./MainTabs";
+import type { Machine } from "../data/machines";
 
-type RootStackParamList = {
+export type RootStackParamList = {
   Splash: undefined;
   SignIn: undefined;
   SignUp: undefined;
@@ -37,8 +38,8 @@ type RootStackParamList = {
   ScanQr: undefined;
   PersonalDetails: undefined;
   CycleTracking: undefined;
-  MachineLayoutMap: undefined;
-  Navigation: undefined;
+  MachineDetails: { machine: Machine };
+  Navigation: { machine: Machine };
   Untitled: undefined;
   Main: undefined;
 };
@@ -83,7 +84,7 @@ export function AppNavigator() {
       <Stack.Screen name="ScanQr" component={ScanQrScreen} />
       <Stack.Screen name="PersonalDetails" component={PersonalDetailsScreen} />
       <Stack.Screen name="CycleTracking" component={CycleTrackingScreen} />
-      <Stack.Screen name="MachineLayoutMap" component={MachineLayoutMapScreen} />
+      <Stack.Screen name="MachineDetails" component={MachineDetailsScreen} />
       <Stack.Screen name="Navigation" component={NavigationScreen} />
       <Stack.Screen name="Untitled" component={UntitledScreen} />
       <Stack.Screen name="Main" component={MainTabs} />
