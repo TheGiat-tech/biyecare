@@ -10,9 +10,12 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import type {
   CycleEntry,
   PregnancyProfile,
+  ReminderSettings,
+  ReminderType,
   SymptomEntry,
   TrackingMode,
 } from "../models/types";
+import { scheduleAllReminders } from "../services/reminders";
 
 const HEALTH_KEY = "biyecare.health";
 
@@ -21,16 +24,29 @@ type HealthStateValue = {
   cycleEntries: CycleEntry[];
   symptomsByDate: Record<string, SymptomEntry>;
   pregnancy: PregnancyProfile | null;
+  reminders: ReminderSettings;
   setMode: (mode: TrackingMode) => void;
   addCycleEntry: (startDate: string, endDate?: string) => void;
   updateSymptom: (date: string, partial: Partial<SymptomEntry>) => void;
   setPregnancyProfile: (profile: PregnancyProfile | null) => void;
+  setReminderEnabled: (type: ReminderType, enabled: boolean) => void;
+  setReminderTime: (hour: number, minute: number) => void;
+  setPeriodDaysBefore: (days: number) => void;
 };
 
 const HealthStateContext = createContext<HealthStateValue | undefined>(undefined);
 
 const buildCycleId = () =>
   `cycle_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+
+const defaultReminders: ReminderSettings = {
+  enabled: {
+    periodPrediction: false,
+    pregnancyWeekly: false,
+  },
+  timeOfDay: { hour: 9, minute: 0 },
+  periodDaysBefore: 2,
+};
 
 export function HealthStateProvider({ children }: { children: React.ReactNode }) {
   const [mode, setModeState] = useState<TrackingMode>("cycle");
@@ -39,6 +55,8 @@ export function HealthStateProvider({ children }: { children: React.ReactNode })
     Record<string, SymptomEntry>
   >({});
   const [pregnancy, setPregnancy] = useState<PregnancyProfile | null>(null);
+  const [reminders, setReminders] =
+    useState<ReminderSettings>(defaultReminders);
   const [hasLoaded, setHasLoaded] = useState(false);
 
   useEffect(() => {
@@ -51,6 +69,7 @@ export function HealthStateProvider({ children }: { children: React.ReactNode })
             cycleEntries?: CycleEntry[];
             symptomsByDate?: Record<string, SymptomEntry>;
             pregnancy?: PregnancyProfile | null;
+            reminders?: ReminderSettings;
           };
           if (parsed.mode) {
             setModeState(parsed.mode);
@@ -64,12 +83,27 @@ export function HealthStateProvider({ children }: { children: React.ReactNode })
           if (parsed.pregnancy !== undefined) {
             setPregnancy(parsed.pregnancy ?? null);
           }
+          if (parsed.reminders) {
+            setReminders({
+              ...defaultReminders,
+              ...parsed.reminders,
+              enabled: {
+                ...defaultReminders.enabled,
+                ...parsed.reminders.enabled,
+              },
+              timeOfDay: {
+                ...defaultReminders.timeOfDay,
+                ...parsed.reminders.timeOfDay,
+              },
+            });
+          }
         }
       } catch (error) {
         setModeState("cycle");
         setCycleEntries([]);
         setSymptomsByDate({});
         setPregnancy(null);
+        setReminders(defaultReminders);
       } finally {
         setHasLoaded(true);
       }
@@ -91,6 +125,7 @@ export function HealthStateProvider({ children }: { children: React.ReactNode })
             cycleEntries,
             symptomsByDate,
             pregnancy,
+            reminders,
           })
         );
       } catch (error) {
@@ -99,7 +134,19 @@ export function HealthStateProvider({ children }: { children: React.ReactNode })
     };
 
     persistHealth();
-  }, [cycleEntries, hasLoaded, mode, pregnancy, symptomsByDate]);
+  }, [cycleEntries, hasLoaded, mode, pregnancy, reminders, symptomsByDate]);
+
+  useEffect(() => {
+    if (!hasLoaded) {
+      return;
+    }
+    scheduleAllReminders({
+      mode,
+      cycleEntries,
+      pregnancy,
+      reminders,
+    });
+  }, [cycleEntries, hasLoaded, mode, pregnancy, reminders]);
 
   const setMode = useCallback((nextMode: TrackingMode) => {
     setModeState(nextMode);
@@ -135,24 +182,59 @@ export function HealthStateProvider({ children }: { children: React.ReactNode })
     []
   );
 
+  const setReminderEnabled = useCallback(
+    (type: ReminderType, enabled: boolean) => {
+      setReminders((prev) => ({
+        ...prev,
+        enabled: {
+          ...prev.enabled,
+          [type]: enabled,
+        },
+      }));
+    },
+    []
+  );
+
+  const setReminderTime = useCallback((hour: number, minute: number) => {
+    setReminders((prev) => ({
+      ...prev,
+      timeOfDay: { hour, minute },
+    }));
+  }, []);
+
+  const setPeriodDaysBefore = useCallback((days: number) => {
+    setReminders((prev) => ({
+      ...prev,
+      periodDaysBefore: days,
+    }));
+  }, []);
+
   const value = useMemo(
     () => ({
       mode,
       cycleEntries,
       symptomsByDate,
       pregnancy,
+      reminders,
       setMode,
       addCycleEntry,
       updateSymptom,
       setPregnancyProfile,
+      setReminderEnabled,
+      setReminderTime,
+      setPeriodDaysBefore,
     }),
     [
       addCycleEntry,
       cycleEntries,
       mode,
       pregnancy,
+      reminders,
       setMode,
       setPregnancyProfile,
+      setPeriodDaysBefore,
+      setReminderEnabled,
+      setReminderTime,
       symptomsByDate,
       updateSymptom,
     ]
