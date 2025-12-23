@@ -1,4 +1,5 @@
 import React from "react";
+import { useAppState } from "../state/AppState";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { SplashScreen } from "../screens/Splash/SplashScreen";
 import { SignInScreen } from "../screens/Auth/SignInScreen";
@@ -45,8 +46,28 @@ type RootStackParamList = {
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export function AppNavigator() {
+  const { isAuthenticated, isSubscribed, isHydrated } = useAppState();
+  const initialRouteName = !isHydrated
+    ? "Splash"
+    : !isAuthenticated
+      ? "SignIn"
+      : !isSubscribed
+        ? "SubscriptionPlans"
+        : "Main";
+  const navigatorKey = !isHydrated
+    ? "splash"
+    : !isAuthenticated
+      ? "auth"
+      : !isSubscribed
+        ? "subscription"
+        : "app";
+
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator
+      screenOptions={{ headerShown: false }}
+      initialRouteName={initialRouteName}
+      key={navigatorKey}
+    >
       <Stack.Screen name="Splash" component={SplashScreen} />
       <Stack.Screen name="SignIn" component={SignInScreen} />
       <Stack.Screen name="SignUp" component={SignUpScreen} />

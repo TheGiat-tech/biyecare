@@ -1,9 +1,12 @@
 import React from "react";
+import { useNavigation } from "@react-navigation/native";
 import { StyleSheet, Text, View } from "react-native";
 import { PrimaryButton } from "../../components/PrimaryButton";
 import { ScreenLayout } from "../../components/ScreenLayout";
 
 export function UntitledScreen() {
+  const navigation = useNavigation();
+
   return (
     <ScreenLayout title="Notification">
       <View style={styles.card}>
@@ -12,7 +15,15 @@ export function UntitledScreen() {
         </View>
         <Text style={styles.title}>Machine ready</Text>
         <Text style={styles.subtitle}>Your product is ready to collect.</Text>
-        <PrimaryButton label="Go to App" />
+        <PrimaryButton
+          label="Go to App"
+          onPress={() =>
+            navigation.reset({
+              index: 0,
+              routes: [{ name: "Main" as never }],
+            })
+          }
+        />
       </View>
     </ScreenLayout>
   );
