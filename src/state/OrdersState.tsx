@@ -8,14 +8,14 @@ import React, {
 } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { Order } from "../models/types";
-
-const ORDERS_KEY = "biyecare.orders";
+import { STORAGE_KEYS } from "../constants/storageKeys";
 
 type OrdersStateValue = {
   orders: Order[];
   createOrder: (packId: string) => Order;
   refreshExpiredOrders: () => void;
   markRedeemed: (orderId: string) => void;
+  resetOrdersState: () => void;
 };
 
 const OrdersStateContext = createContext<OrdersStateValue | undefined>(undefined);
@@ -30,7 +30,7 @@ export function OrdersStateProvider({ children }: { children: React.ReactNode })
   useEffect(() => {
     const loadOrders = async () => {
       try {
-        const stored = await AsyncStorage.getItem(ORDERS_KEY);
+        const stored = await AsyncStorage.getItem(STORAGE_KEYS.ORDERS);
         if (stored) {
           const parsed = JSON.parse(stored) as Order[];
           setOrders(parsed);
@@ -48,7 +48,10 @@ export function OrdersStateProvider({ children }: { children: React.ReactNode })
   useEffect(() => {
     const persistOrders = async () => {
       try {
-        await AsyncStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
+        await AsyncStorage.setItem(
+          STORAGE_KEYS.ORDERS,
+          JSON.stringify(orders)
+        );
       } catch (error) {
         // Ignore persistence errors for local mock state.
       }
@@ -101,14 +104,19 @@ export function OrdersStateProvider({ children }: { children: React.ReactNode })
     );
   }, []);
 
+  const resetOrdersState = useCallback(() => {
+    setOrders([]);
+  }, []);
+
   const value = useMemo(
     () => ({
       orders,
       createOrder,
       refreshExpiredOrders,
       markRedeemed,
+      resetOrdersState,
     }),
-    [createOrder, markRedeemed, orders, refreshExpiredOrders]
+    [createOrder, markRedeemed, orders, refreshExpiredOrders, resetOrdersState]
   );
 
   return (
