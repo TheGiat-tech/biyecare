@@ -25,6 +25,7 @@ const buildOrderId = () =>
 
 export function OrdersStateProvider({ children }: { children: React.ReactNode }) {
   const [orders, setOrders] = useState<Order[]>([]);
+  const [hasLoaded, setHasLoaded] = useState(false);
 
   useEffect(() => {
     const loadOrders = async () => {
@@ -36,6 +37,8 @@ export function OrdersStateProvider({ children }: { children: React.ReactNode })
         }
       } catch (error) {
         setOrders([]);
+      } finally {
+        setHasLoaded(true);
       }
     };
 
@@ -68,6 +71,12 @@ export function OrdersStateProvider({ children }: { children: React.ReactNode })
       })
     );
   }, []);
+
+  useEffect(() => {
+    if (hasLoaded) {
+      refreshExpiredOrders();
+    }
+  }, [hasLoaded, refreshExpiredOrders]);
 
   const createOrder = useCallback((packId: string) => {
     const now = Date.now();

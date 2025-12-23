@@ -1,9 +1,48 @@
-import React from "react";
+import React, { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 import { PrimaryButton } from "../../components/PrimaryButton";
 import { ScreenLayout } from "../../components/ScreenLayout";
+import { TextField } from "../../components/TextField";
+import { useOrdersState } from "../../state/OrdersState";
+import { parseOrderToken } from "../../utils/qr";
 
 export function ScanQrScreen() {
+  const navigation = useNavigation();
+  const { orders, markRedeemed, refreshExpiredOrders } = useOrdersState();
+  const [payload, setPayload] = useState("");
+  const [error, setError] = useState("");
+
+  const handleRedeem = () => {
+    refreshExpiredOrders();
+    const parsed = parseOrderToken(payload);
+    if (!parsed) {
+      setError("Order not found");
+      return;
+    }
+    const order = orders.find((item) => item.id === parsed.orderId);
+    if (!order) {
+      setError("Order not found");
+      return;
+    }
+    const now = Date.now();
+    if (order.status === "redeemed") {
+      setError("Already redeemed");
+      return;
+    }
+    if (
+      order.status === "expired" ||
+      (order.status === "pending" &&
+        new Date(order.expiresAt).getTime() <= now)
+    ) {
+      setError("Expired");
+      return;
+    }
+    markRedeemed(order.id);
+    setError("");
+    navigation.navigate("RedeemSuccess" as never, { orderId: order.id } as never);
+  };
+
   // TODO: Integrate device camera + QR scanning when backend is available.
   return (
     <ScreenLayout title="Scan">
@@ -15,7 +54,20 @@ export function ScanQrScreen() {
         <Text style={styles.scanLabel}>Align QR inside the frame</Text>
       </View>
       <Text style={styles.helper}>Scan the QR code on the machine.</Text>
-      <PrimaryButton label="Scan" />
+      <TextField
+        label="Paste QR payload"
+        placeholder="BIYE:ORDER:..."
+        value={payload}
+        onChangeText={(value) => {
+          setPayload(value);
+          if (error) {
+            setError("");
+          }
+        }}
+        autoCapitalize="none"
+      />
+      {error ? <Text style={styles.error}>{error}</Text> : null}
+      <PrimaryButton label="Redeem" onPress={handleRedeem} />
     </ScreenLayout>
   );
 }
@@ -73,6 +125,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#8B8F99",
     textAlign: "center",
+    marginBottom: 12,
+  },
+  error: {
+    fontSize: 12,
+    color: "#D6455D",
     marginBottom: 12,
   },
 });

@@ -17,6 +17,7 @@ import { UntitledScreen } from "../screens/Misc/UntitledScreen";
 import { MapScreen } from "../screens/MapMachines/MapScreen";
 import { MachineDetailsScreen } from "../screens/MapMachines/MachineDetailsScreen";
 import { ScanQrScreen } from "../screens/Scan/ScanQrScreen";
+import { RedeemSuccessScreen } from "../screens/Scan/RedeemSuccessScreen";
 import { PersonalDetailsScreen } from "../screens/Profile/PersonalDetailsScreen";
 import { CycleTrackingScreen } from "../screens/Cycle/CycleTrackingScreen";
 import { PacksListScreen } from "../screens/Packs/PacksListScreen";
@@ -39,6 +40,7 @@ export type RootStackParamList = {
   PurchaseCompletedSuccess: undefined;
   Map: undefined;
   ScanQr: undefined;
+  RedeemSuccess: { orderId?: string };
   PersonalDetails: undefined;
   CycleTracking: undefined;
   MachineDetails: { machine: Machine };
@@ -88,6 +90,7 @@ export function AppNavigator() {
       <Stack.Screen name="PurchaseCompletedSuccess" component={PurchaseCompletedSuccessScreen} />
       <Stack.Screen name="Map" component={MapScreen} />
       <Stack.Screen name="ScanQr" component={ScanQrScreen} />
+      <Stack.Screen name="RedeemSuccess" component={RedeemSuccessScreen} />
       <Stack.Screen name="PersonalDetails" component={PersonalDetailsScreen} />
       <Stack.Screen name="CycleTracking" component={CycleTrackingScreen} />
       <Stack.Screen name="MachineDetails" component={MachineDetailsScreen} />
