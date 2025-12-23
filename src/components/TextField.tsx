@@ -4,9 +4,22 @@ import { StyleSheet, Text, TextInput, View } from "react-native";
 interface TextFieldProps {
   label: string;
   placeholder: string;
+  value?: string;
+  onChangeText?: (value: string) => void;
+  keyboardType?: "default" | "email-address" | "number-pad";
+  secureTextEntry?: boolean;
+  autoCapitalize?: "none" | "sentences" | "words" | "characters";
 }
 
-export function TextField({ label, placeholder }: TextFieldProps) {
+export function TextField({
+  label,
+  placeholder,
+  value,
+  onChangeText,
+  keyboardType = "default",
+  secureTextEntry = false,
+  autoCapitalize = "sentences",
+}: TextFieldProps) {
   return (
     <View style={styles.container}>
       <Text style={styles.label}>{label}</Text>
@@ -14,6 +27,11 @@ export function TextField({ label, placeholder }: TextFieldProps) {
         placeholder={placeholder}
         style={styles.input}
         placeholderTextColor="#B0B3BC"
+        value={value}
+        onChangeText={onChangeText}
+        keyboardType={keyboardType}
+        secureTextEntry={secureTextEntry}
+        autoCapitalize={autoCapitalize}
       />
     </View>
   );

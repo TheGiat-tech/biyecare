@@ -1,10 +1,13 @@
 import React from "react";
+import { useNavigation } from "@react-navigation/native";
 import { StyleSheet, Text, View } from "react-native";
 import { PrimaryButton } from "../../components/PrimaryButton";
 import { ScreenLayout } from "../../components/ScreenLayout";
 import { SectionCard } from "../../components/SectionCard";
 
 export function SubscriptionPlansScreen() {
+  const navigation = useNavigation();
+
   return (
     <ScreenLayout title="Subscription">
       <SectionCard>
@@ -22,7 +25,10 @@ export function SubscriptionPlansScreen() {
             <Text style={[styles.planNote, styles.planHighlightText]}>Save 20%</Text>
           </View>
         </View>
-        <PrimaryButton label="Continue" />
+        <PrimaryButton
+          label="Continue"
+          onPress={() => navigation.navigate("AddPaymentMethod" as never)}
+        />
       </SectionCard>
     </ScreenLayout>
   );

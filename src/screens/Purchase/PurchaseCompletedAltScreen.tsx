@@ -1,9 +1,12 @@
 import React from "react";
+import { useNavigation } from "@react-navigation/native";
 import { StyleSheet, Text, View } from "react-native";
 import { PrimaryButton } from "../../components/PrimaryButton";
 import { ScreenLayout } from "../../components/ScreenLayout";
 
 export function PurchaseCompletedAltScreen() {
+  const navigation = useNavigation();
+
   return (
     <ScreenLayout title="Purchase Completed">
       <View style={styles.card}>
@@ -14,7 +17,15 @@ export function PurchaseCompletedAltScreen() {
         <Text style={styles.subtitle}>
           Use the navigation screen to reach the machine.
         </Text>
-        <PrimaryButton label="Navigate" />
+        <PrimaryButton
+          label="Navigate"
+          onPress={() =>
+            navigation.reset({
+              index: 0,
+              routes: [{ name: "Main" as never }],
+            })
+          }
+        />
       </View>
     </ScreenLayout>
   );

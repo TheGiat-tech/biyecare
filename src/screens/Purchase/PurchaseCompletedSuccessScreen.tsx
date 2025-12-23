@@ -1,9 +1,12 @@
 import React from "react";
+import { useNavigation } from "@react-navigation/native";
 import { StyleSheet, Text, View } from "react-native";
 import { PrimaryButton } from "../../components/PrimaryButton";
 import { ScreenLayout } from "../../components/ScreenLayout";
 
 export function PurchaseCompletedSuccessScreen() {
+  const navigation = useNavigation();
+
   return (
     <ScreenLayout title="Success">
       <View style={styles.card}>
@@ -14,7 +17,10 @@ export function PurchaseCompletedSuccessScreen() {
         <Text style={styles.subtitle}>
           Thank you! Your subscription and product are ready.
         </Text>
-        <PrimaryButton label="Go to Home" />
+        <PrimaryButton
+          label="Go to Home"
+          onPress={() => navigation.reset({ index: 0, routes: [{ name: "Main" as never }] })}
+        />
       </View>
     </ScreenLayout>
   );

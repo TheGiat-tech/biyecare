@@ -1,10 +1,25 @@
-import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import React, { useState } from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 import { PrimaryButton } from "../../components/PrimaryButton";
 import { ScreenLayout } from "../../components/ScreenLayout";
 import { TextField } from "../../components/TextField";
+import { useAppState } from "../../state/AppState";
 
 export function SignInScreen() {
+  const navigation = useNavigation();
+  const { signIn } = useAppState();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const handleSignIn = () => {
+    signIn({ email });
+    navigation.reset({
+      index: 0,
+      routes: [{ name: "SubscriptionPlans" as never }],
+    });
+  };
+
   return (
     <ScreenLayout title="Sign In">
       <View style={styles.card}>
@@ -17,12 +32,28 @@ export function SignInScreen() {
           <PrimaryButton label="Google" variant="ghost" />
         </View>
         <Text style={styles.orText}>or sign in with email</Text>
-        <TextField label="Email" placeholder="name@email.com" />
-        <TextField label="Password" placeholder="••••••••" />
+        <TextField
+          label="Email"
+          placeholder="name@email.com"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
+        />
+        <TextField
+          label="Password"
+          placeholder="••••••••"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+          autoCapitalize="none"
+        />
         <Text style={styles.forgot}>Forgot password?</Text>
-        <PrimaryButton label="Sign In" />
+        <PrimaryButton label="Sign In" onPress={handleSignIn} />
       </View>
-      <Text style={styles.footerText}>Don't have an account? Sign up</Text>
+      <Pressable onPress={() => navigation.navigate("SignUp" as never)}>
+        <Text style={styles.footerText}>Don't have an account? Sign up</Text>
+      </Pressable>
     </ScreenLayout>
   );
 }

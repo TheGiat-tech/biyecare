@@ -1,9 +1,12 @@
 import React from "react";
+import { useNavigation } from "@react-navigation/native";
 import { StyleSheet, Text, View } from "react-native";
 import { PrimaryButton } from "../../components/PrimaryButton";
 import { ScreenLayout } from "../../components/ScreenLayout";
 
 export function PurchaseCompletedScreen() {
+  const navigation = useNavigation();
+
   return (
     <ScreenLayout title="Purchase Completed">
       <View style={styles.card}>
@@ -14,7 +17,15 @@ export function PurchaseCompletedScreen() {
         <Text style={styles.subtitle}>
           Your product is ready. Scan the QR code to receive it.
         </Text>
-        <PrimaryButton label="Scan QR" />
+        <PrimaryButton
+          label="Scan QR"
+          onPress={() =>
+            navigation.reset({
+              index: 0,
+              routes: [{ name: "Main" as never }],
+            })
+          }
+        />
       </View>
     </ScreenLayout>
   );
