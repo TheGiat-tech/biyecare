@@ -1,0 +1,10 @@
+{
+  "expo": {
+    "name": "BiYé",
+    "slug": "biyecare",
+    "version": "0.0.1",
+    "orientation": "portrait",
+    "platforms": ["ios", "android"],
+    "userInterfaceStyle": "light"
+  }
+}
