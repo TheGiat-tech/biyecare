@@ -35,6 +35,7 @@ import {
   calcNextPeriodPrediction,
   calcTopSymptoms,
 } from "../../utils/insights";
+import { getRecentLogs } from "../../utils/history";
 
 const FLOW_OPTIONS: Array<"light" | "medium" | "heavy"> = [
   "light",
@@ -100,6 +101,7 @@ export function CycleTrackingScreen() {
   const [pregnancyDate, setPregnancyDate] = useState("");
   const [showHourOptions, setShowHourOptions] = useState(false);
   const [showMinuteOptions, setShowMinuteOptions] = useState(false);
+  const [historyRange, setHistoryRange] = useState<14 | 30>(14);
 
   const hourOptions = useMemo(
     () => Array.from({ length: 24 }, (_, index) => index),
@@ -307,6 +309,7 @@ export function CycleTrackingScreen() {
 
   const handleSelectDay = (iso: string) => {
     setSelectedDateIso(iso);
+    setCurrentMonthDate(new Date(iso));
   };
 
   const handleToggleReminder = (
@@ -901,6 +904,84 @@ export function CycleTrackingScreen() {
     </View>
   );
 
+  const recentLogs = useMemo(
+    () => getRecentLogs(symptomsByDate, historyRange),
+    [historyRange, symptomsByDate]
+  );
+
+  const renderHistorySection = () => (
+    <View style={styles.card}>
+      <View style={styles.historyHeader}>
+        <Text style={styles.cardTitle}>History</Text>
+        <View style={styles.historyToggleRow}>
+          {[14, 30].map((range) => {
+            const isActive = historyRange === range;
+            return (
+              <Pressable
+                key={range}
+                style={[styles.historyChip, isActive && styles.historyChipActive]}
+                onPress={() => setHistoryRange(range as 14 | 30)}
+              >
+                <Text
+                  style={[
+                    styles.historyChipText,
+                    isActive && styles.historyChipTextActive,
+                  ]}
+                >
+                  {`Last ${range} days`}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
+      {recentLogs.length ? (
+        recentLogs.map((log) => {
+          const bleedingLabel =
+            log.bleedingType !== "none"
+              ? getOptionLabel(BLEEDING_OPTIONS, log.bleedingType)
+              : null;
+          const dischargeLabel =
+            log.dischargeType !== "none"
+              ? getOptionLabel(DISCHARGE_OPTIONS, log.dischargeType)
+              : null;
+          const formattedDate = new Date(log.date).toLocaleDateString("en-US", {
+            weekday: "short",
+            month: "short",
+            day: "numeric",
+          });
+          return (
+            <Pressable
+              key={log.date}
+              style={styles.historyRow}
+              onPress={() => handleSelectDay(log.date)}
+            >
+              <Text style={styles.historyDate}>{formattedDate}</Text>
+              <View style={styles.historyBadgesRow}>
+                {bleedingLabel ? (
+                  <View style={[styles.historyBadge, styles.bleedingBadge]}>
+                    <Text style={styles.historyBadgeText}>
+                      Bleeding: {bleedingLabel}
+                    </Text>
+                  </View>
+                ) : null}
+                {dischargeLabel ? (
+                  <View style={[styles.historyBadge, styles.dischargeBadge]}>
+                    <Text style={styles.historyBadgeText}>
+                      Discharge: {dischargeLabel}
+                    </Text>
+                  </View>
+                ) : null}
+              </View>
+            </Pressable>
+          );
+        })
+      ) : (
+        <Text style={styles.cardCaption}>No recent logs yet.</Text>
+      )}
+    </View>
+  );
+
   return (
     <ScreenLayout title="Cycle Tracking">
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -909,6 +990,7 @@ export function CycleTrackingScreen() {
         {mode === "cycle" ? renderCycleMode() : renderPregnancyMode()}
         {renderRemindersSection()}
         {renderInsightsSection()}
+        {renderHistorySection()}
         <Text style={styles.disclaimer}>
           For tracking only. Not medical advice.
         </Text>
@@ -1283,6 +1365,72 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
   },
   weekDetailsText: {
+    fontSize: 12,
+    color: "#4A4D57",
+    fontWeight: "600",
+  },
+  historyHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  historyToggleRow: {
+    flexDirection: "row",
+  },
+  historyChip: {
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#E2E3E8",
+    marginLeft: 8,
+  },
+  historyChipActive: {
+    backgroundColor: "#FDE7EC",
+    borderColor: "#F05A78",
+  },
+  historyChipText: {
+    fontSize: 12,
+    color: "#7A7D87",
+    fontWeight: "600",
+  },
+  historyChipTextActive: {
+    color: "#F05A78",
+  },
+  historyRow: {
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F2F3F7",
+  },
+  historyDate: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#111111",
+    marginBottom: 6,
+  },
+  historyBadgesRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+  },
+  historyBadge: {
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#E2E3E8",
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  bleedingBadge: {
+    backgroundColor: "#FDE7EC",
+    borderColor: "#F05A78",
+  },
+  dischargeBadge: {
+    backgroundColor: "#E9F2FF",
+    borderColor: "#A5C8FF",
+  },
+  historyBadgeText: {
     fontSize: 12,
     color: "#4A4D57",
     fontWeight: "600",
